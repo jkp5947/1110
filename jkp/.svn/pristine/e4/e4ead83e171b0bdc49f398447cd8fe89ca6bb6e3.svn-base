@@ -1,0 +1,144 @@
+An Introduction to UNIX, Linux, and GNUIn recent years Linux has become a phenomenon. Hardly a day goes by without Linux cropping
+up in the media in some way. We’ve lost count of the number of applications that have been made
+available on Linux and the number of organizations that have adopted it, including some government
+departments and city administrations. Major hardware vendors like IBM and Dell now support
+Linux, and major software vendors like Oracle support their software running on Linux.
+Linux truly has become a viable operating system, especially in the server market.
+Linux owes its success to systems and applications that preceded it: UNIX and GNU software.
+This section looks at how Linux came to be and what its roots are.
+What Is UNIX?
+The UNIX operating system was originally developed at Bell Laboratories, once part of the
+telecommunications giant AT&T. Designed in the 1970s for Digital Equipment PDP computers,
+UNIX has become a very popular multiuser, multitasking operating system for a wide variety of
+hardware platforms, from PC workstations to multiprocessor servers and supercomputers.
+A Brief History of UNIX
+Strictly, UNIX is a trademark administered by The Open Group, and it refers to a computer operating
+system that conforms to a particular specification. This specification, known as The Single UNIX
+Specification, defines the names of, interfaces to, and behaviors of all mandatory UNIX operating system
+functions. The specification is largely a superset of an earlier series of specifications, the P1003, or
+POSIX (Portable Operating System Interface) specifications, developed by the IEEE (Institute of
+Electrical and Electronic Engineers).
+Many UNIX-like systems are available commercially, such as IBM’s AIX, HP’s HP-UX, and Sun’s Solaris.
+Some have been made available for free, such as FreeBSD and Linux. Only a few systems currently conform
+to The Open Group specification, which allows them to be marketed with the name UNIX.
+In the past, compatibility among different UNIX systems has been a real problem, although POSIX was a
+great help in this respect. These days, by following a few simple rules it is possible to create applications
+that will run on all UNIX and UNIX-like systems. You can find more details on Linux and UNIX standards
+in Chapter 18.
+UNIX Philosophy
+In the following chapters we hope to convey a flavor of Linux (and therefore UNIX) programming.
+Although programming in C is in many ways the same whatever the platform, UNIX and Linux developers
+have a special view of program and system development.
+The UNIX operating system, and hence Linux, encourages a certain programming style. Following are a
+few characteristics shared by typical UNIX programs and systems:
+Simplicity: Many of the most useful UNIX utilities are very simple and, as a result, small and
+easy to understand. KISS, “Keep It Small and Simple,” is a good technique to learn. Larger, more
+complex systems are guaranteed to contain larger, more complex bugs, and debugging is a chore
+that we’d all like to avoid!
+Focus: It’s often better to make a program perform one task well than to throw in every feature
+along with the kitchen sink. A program with “feature bloat” can be difficult to use and difficult
+to maintain. Programs with a single purpose are easier to improve as better algorithms or interfaces
+are developed. In UNIX, small utilities are often combined to perform more demanding
+tasks when the need arises, rather than trying to anticipate a user’s needs in one large program.
+Reusable Components: Make the core of your application available as a library. Well-documented
+libraries with simple but flexible programming interfaces can help others to develop variations or
+apply the techniques to new application areas. Examples include the dbm database library, which is
+a suite of reusable functions rather than a single database management program.
+Filters: Many UNIX applications can be used as filters. That is, they transform their input and
+produce output. As you’ll see, UNIX provides facilities that allow quite complex applications
+to be developed from other UNIX programs by combining them in novel ways. Of course, this
+kind of reuse is enabled by the development methods that we’ve previously mentioned.
+Open File Formats: The more successful and popular UNIX programs use configuration files
+and data files that are plain ASCII text or XML. If either of these is an option for your program
+development, it’s a good choice. It enables users to use standard tools to change and search for
+configuration items and to develop new tools for performing new functions on the data files.
+A good example of this is the ctags source code cross-reference system, which records symbol
+location information as regular expressions suitable for use by searching programs.
+2
+Chapter 1: Getting Started
+Flexibility: You can’t anticipate exactly how ingeniously users will use your program. Try to be
+as flexible as possible in your programming. Try to avoid arbitrary limits on field sizes or number
+of records. If you can, write the program so that it’s network-aware and able to run across a
+network as well as on a local machine. Never assume that you know everything that the user
+might want to do.
+What Is Linux?
+As you may already know, Linux is a freely distributed implementation of a UNIX-like kernel, the lowlevel
+core of an operating system. Because Linux takes the UNIX system as its inspiration, Linux and
+UNIX programs are very similar. In fact, almost all programs written for UNIX can be compiled and run
+on Linux. Also, some commercial applications sold for commercial versions of UNIX can run unchanged
+in binary form on Linux systems.
+Linux was developed by Linus Torvalds at the University of Helsinki, with the help of UNIX programmers
+from across the Internet. It began as a hobby inspired by Andy Tanenbaum’s Minix, a small UNIXlike
+system, but has grown to become a complete system in its own right. The intention is that the Linux
+kernel will not incorporate proprietary code but will contain nothing but freely distributable code.
+Versions of Linux are now available for a wide variety of computer systems using many different types
+of CPUs, including PCs based on 32-bit and 64-bit Intel x86 and compatible processors; workstations and
+servers using Sun SPARC, IBM PowerPC, AMD Opteron, and Intel Itanium; and even some handheld
+PDAs and Sony’s Playstations 2 and 3. If it’s got a processor, someone somewhere is trying to get Linux
+running on it!
+The GNU Project and the Free Software Foundation
+Linux owes its existence to the cooperative efforts of a large number of people. The operating system kernel
+itself forms only a small part of a usable development system. Commercial UNIX systems traditionally come
+bundled with applications that provide system services and tools. For Linux systems, these additional programs
+have been written by many different programmers and have been freely contributed.
+The Linux community (together with others) supports the concept of free software, that is, software that
+is free from restrictions, subject to the GNU General Public License (the name GNU stands for the recursive
+GNU’s Not Unix). Although there may be a cost involved in obtaining the software, it can thereafter
+be used in any way desired and is usually distributed in source form.
+The Free Software Foundation was set up by Richard Stallman, the author of GNU Emacs, one of the
+best-known text editors for UNIX and other systems. Stallman is a pioneer of the free software concept
+and started the GNU Project, an attempt to create an operating system and development environment
+that would be compatible with UNIX, but not suffer the restrictions of the proprietary UNIX name and
+source code. GNU may one day turn out to be very different from UNIX in the way it handles the hardware
+and manages running programs, but it will still support UNIX-style applications.
+The GNU Project has already provided the software community with many applications that closely mimic
+those found on UNIX systems. All these programs, so-called GNU software, are distributed under the terms
+of the GNU General Public License (GPL); you can find a copy of the license at http://www.gnu.org. This
+license embodies the concept of copyleft (a takeoff on “copyright”). Copyleft is intended to prevent others
+from placing restrictions on the use of free software.
+3
+Chapter 1: Getting Started
+A few major examples of software from the GNU Project distributed under the GPL follow:
+GCC: The GNU Compiler Collection, containing the GNU C compiler
+G++: A C++ compiler, included as part of GCC
+GDB: A source code–level debugger
+GNU make: A version of UNIX make
+Bison: A parser generator compatible with UNIX yacc
+bash: A command shell
+GNU Emacs: A text editor and environment
+Many other packages have been developed and released using free software principles and the GPL,
+including spreadsheets, source code control tools, compilers and interpreters, Internet tools, graphical
+image manipulation tools such as the Gimp, and two complete object-based environments: GNOME and
+KDE. We discuss GNOME and KDE in Chapters 16 and 17.
+There is now so much free software available that with the addition of the Linux kernel it could be said
+that the goal of a creating GNU, a free UNIX-like system, has been achieved with Linux. To recognize the
+contribution made by GNU software, many people now refer to Linux systems in general as
+GNU/Linux.
+You can learn more about the free software concept at http://www.gnu.org.
+Linux Distributions
+As we have already mentioned, Linux is actually just a kernel. You can obtain the sources for the kernel
+to compile and install it on a machine and then obtain and install many other freely distributed software
+programs to make a complete Linux installation. These installations are usually referred to as Linux systems,
+because they consist of much more than just the kernel. Most of the utilities come from the GNU
+Project of the Free Software Foundation.
+As you can probably appreciate, creating a Linux system from just source code is a major undertaking.
+Fortunately, many people have put together ready-to-install distributions (often called flavors), usually
+downloadable or on CD-ROMs or DVDs, that contain not just the kernel but also many other programming
+tools and utilities. These often include an implementation of the X Window System, a graphical
+environment common on many UNIX systems. The distributions usually come with a setup program
+and additional documentation (normally all on the CD[s]) to help you install your own Linux system.
+Some well-known distributions, particularly on the Intel x86 family of processors, are Red Hat
+Enterprise Linux and its community-developed cousin Fedora, Novell SUSE Linux and the free
+openSUSE variant, Ubuntu Linux, Slackware, Gentoo, and Debian GNU/Linux. Check out the
+DistroWatch site at http://distrowatch.com for details on many more Linux distributions.
+Programming Linux
+Many people think that programming Linux means using C. It’s true that UNIX was originally written
+in C and that the majority of UNIX applications are written in C, but C is not the only option available to
+4
+Chapter 1: Getting Started
+Linux programmers, or UNIX programmers for that matter. In the course of the book, we’ll mention a
+couple of the alternatives.
+A vast range of programming languages are available for Linux systems, and many of them are free and
+available on CD-ROM collections or from FTP archive sites on the Internet. Here’s a partial list of programming
+languages available to the Linux programmer:
+END:
