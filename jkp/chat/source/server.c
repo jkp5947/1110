@@ -59,12 +59,12 @@ void send_list(jkp_global *g_data, int request_fd)
 
    if (eye == g_data->c_list.tail)
    {
-      sprintf(buf, "%d%s", 2, "No list");
+      sprintf(buf, "%d|%s", 2, "No list");
       write(request_fd, buf, sizeof(buf));
    }
    while (eye != g_data->c_list.tail)
    {
-      sprintf(buf, "%d%s", 2, ((Client_data *)eye->pData)->ci.client_id);
+      sprintf(buf, "%d|%s", 2, ((Client_data *)eye->pData)->ci.client_id);
       write(request_fd, buf, 11);    
       eye = eye->next;
    }
@@ -221,17 +221,24 @@ int main(void)
             else
             {
                read(fd, buf, sizeof(buf));
-               sscanf(buf, "%d%[^\n]", &recv_flag, buf);
+               printf("buf = %s\n",buf);
+               sscanf(buf, "%d|%[^\n]", &recv_flag, buf);
                switch (recv_flag)
                {
                   case 0:
                      send_msg(&global_data, fd, buf);
                      break; 
                   case 1:
+                     printf("id = %s\n",buf);
                      reply_flag = recv_id(&global_data, buf, fd);
                      if (reply_flag == -1)
                      {
-                        sprintf(buf, "%d%s", 1, "Duplicate ID");
+                        sprintf(buf, "%d|%s", 1, "Duplicate ID");
+                        write(fd, buf, sizeof(buf));
+                     }
+                     else
+                     {
+                        sprintf(buf, "%d|%s", 1, "success");
                         write(fd, buf, sizeof(buf));
                      }
                      break;
