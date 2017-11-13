@@ -29,6 +29,7 @@ void linkedlist_add(List *list, void *struct_data, int choice_flag)
       c_nw_data = (Client_data *)malloc(sizeof(Client_data));
       *c_nw_data = *(Client_data *)struct_data;
       nw->pData =c_nw_data;
+      memset(((Client_data *)nw->pData)->ci.client_id, 0x00, 10);
    }
    else if (choice_flag == 1)
    {

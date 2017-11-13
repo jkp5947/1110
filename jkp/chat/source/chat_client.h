@@ -24,6 +24,6 @@ void history_request(Client_info *ct);
 char acp_recv(Client_info *ct, char *acp);
 
 // 초대 요청 수신시 수락/거절을 선택하여 서버로 send
-char inv_recv(Client_info *ct, char *request);
+void inv_recv(Client_info *ct);
 
 //history recv는 한줄씩 보내주는대로 화면에 출력하는걸로 생각

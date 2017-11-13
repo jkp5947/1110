@@ -54,20 +54,26 @@ int recv_id(jkp_global *g_data, char *id, int fd)
 void send_list(jkp_global *g_data, int request_fd)
 {
    Node *eye;
-   char buf[11]={0};
+   char buf[10]={0};
+
    eye = g_data->c_list.head->next;
 
    if (eye == g_data->c_list.tail)
    {
-      sprintf(buf, "%d|%s", 2, "No list");
+      sprintf(buf, "%d|%s", 2, "Nolist");
       write(request_fd, buf, sizeof(buf));
+      printf("!!!!!!!!!\n!");
    }
    while (eye != g_data->c_list.tail)
    {
       sprintf(buf, "%d|%s", 2, ((Client_data *)eye->pData)->ci.client_id);
-      write(request_fd, buf, 11);    
+      write(request_fd, buf, 10);    
       eye = eye->next;
+      printf("@@@@@@@@@@\n");
    }
+   sprintf(buf, "%d|%s", 2, "end");
+   write(request_fd, buf, 10);
+   printf("%s\n",buf);
    return ;
 }
 
@@ -193,6 +199,7 @@ int main(void)
       int inv_fd;
       int reply_flag; 
       int index, ofs;
+      int nread;
       testfds = readfds;
 
       printf("server waiting\n");
@@ -215,75 +222,92 @@ int main(void)
                c_data.ci.client_fd = accept(server_sockfd, (struct sockaddr *)&(c_data.ci.client_address), &(c_data.ci.client_len));
                FD_SET(c_data.ci.client_fd, &readfds);
                nfds++;
-               linkedlist_add(&(global_data.c_list), &c_data, 0);
                send_list(&global_data, c_data.ci.client_fd);
+               linkedlist_add(&(global_data.c_list), &c_data, 0);
             }
             else
             {
-               read(fd, buf, sizeof(buf));
-               printf("buf = %s\n",buf);
-               sscanf(buf, "%d|%[^\n]", &recv_flag, buf);
-               switch (recv_flag)
-               {
-                  case 0:
-                     send_msg(&global_data, fd, buf);
-                     break; 
-                  case 1:
-                     printf("id = %s\n",buf);
-                     reply_flag = recv_id(&global_data, buf, fd);
-                     if (reply_flag == -1)
-                     {
-                        sprintf(buf, "%d|%s", 1, "Duplicate ID");
-                        write(fd, buf, sizeof(buf));
-                     }
-                     else
-                     {
-                        sprintf(buf, "%d|%s", 1, "success");
-                        write(fd, buf, sizeof(buf));
-                     }
-                     break;
-                  case 2: 
-                     send_list(&global_data, fd);
-                     break;
-                  case 3: 
-                     r_data.att_fd[1] = linkedlist_search(&(global_data.c_list), 
-                           buf, 0, 4, 1);
-                     if (r_data.att_fd[1] == -1)
-                     {
-                        sprintf(buf, "%d%s", 3, "No user");
-                        write(fd, buf, sizeof(buf));
-                     }
-                     else
-                     {
-                        r_data.att_fd[0] = fd;
-                        linkedlist_add(&(global_data.r_list), &r_data, 2);
-                        send_inv(&global_data, r_data.att_fd[1], fd);       
-                     }
-                     break;
-                  case 4:
-                     reply_flag = strncmp(buf, "수락", sizeof("수락"));
-                     if (reply_flag == 0) //수락시
-                     {
-                        ofs = OFFSET(Room, att_fd[1]);
-                        index = linkedlist_search(&(global_data.r_list), &fd, ofs, 4, 0);
-                        create_room(&global_data, index);
-                        printf("[%d], [%d]의 채팅이 시작되었습니다.\n", 
-                              linkedlist_search(&(global_data.r_list), &fd, ofs, 4, 1), fd);
-                     }
-                     else 
-                     {
-                        inv_fd = linkedlist_search(&(global_data.r_list), &fd, 4, 4, 1);
-                        sprintf(buf, "%d%s", 4, "거절하였습니다");
-                        write(inv_fd, buf, sizeof(buf));
-                        linkedlist_delete(&(global_data.r_list), &inv_fd, 0, 4);
-                     }
-                     break;
-                  case 5:
-                     call_history(&global_data, fd);
-                     break;
-                  case 6:
-                     exit_client(&global_data, fd);
+               ioctl(fd, FIONREAD, &nread);
 
+               if (nread == 0)
+               {
+                  
+                  if (linkedlist_delete(&(global_data.c_list), &fd, 0, 4) == -1)
+                     printf("error : fd is already deleted!\n");
+                  else
+                  {
+                     close(fd);
+                     FD_CLR(fd, &readfds);
+                     printf("%d가 퇴장하였습니다.\n", fd);
+                  }
+               }
+               else
+               {
+                  read(fd, buf, sizeof(buf));
+                  printf("buf = %s\n",buf);
+                  sscanf(buf, "%d|%[^\n]", &recv_flag, buf);
+                  switch (recv_flag)
+                  {
+                     case 0:
+                        send_msg(&global_data, fd, buf);
+                        break; 
+                     case 1:
+                        printf("id = %s\n",buf);
+                        reply_flag = recv_id(&global_data, buf, fd);
+                        if (reply_flag == -1)
+                        {
+                           sprintf(buf, "%d|%s", 1, "DuplicateID");
+                           write(fd, buf, sizeof(buf));
+                        }
+                        else
+                        {
+                           sprintf(buf, "%d|%s", 1, "success");
+                           write(fd, buf, sizeof(buf));
+                        }
+                        break;
+                     case 2: 
+                        send_list(&global_data, fd);
+                        break;
+                     case 3: 
+                        r_data.att_fd[1] = linkedlist_search(&(global_data.c_list), 
+                              buf, 0, 4, 1);
+                        if (r_data.att_fd[1] == -1)
+                        {
+                           sprintf(buf, "%d%s", 3, "No user");
+                           write(fd, buf, sizeof(buf));
+                        }
+                        else
+                        {
+                           r_data.att_fd[0] = fd;
+                           linkedlist_add(&(global_data.r_list), &r_data, 2);
+                           send_inv(&global_data, r_data.att_fd[1], fd);       
+                        }
+                        break;
+                     case 4:
+                        reply_flag = strncmp(buf, "수락", sizeof("수락"));
+                        if (reply_flag == 0) //수락시
+                        {
+                           ofs = OFFSET(Room, att_fd[1]);
+                           index = linkedlist_search(&(global_data.r_list), &fd, ofs, 4, 0);
+                           create_room(&global_data, index);
+                           printf("[%d], [%d]의 채팅이 시작되었습니다.\n", 
+                                 linkedlist_search(&(global_data.r_list), &fd, ofs, 4, 1), fd);
+                        }
+                        else 
+                        {
+                           inv_fd = linkedlist_search(&(global_data.r_list), &fd, 4, 4, 1);
+                           sprintf(buf, "%d%s", 4, "거절하였습니다");
+                           write(inv_fd, buf, sizeof(buf));
+                           linkedlist_delete(&(global_data.r_list), &inv_fd, 0, 4);
+                        }
+                        break;
+                     case 5:
+                        call_history(&global_data, fd);
+                        break;
+                     case 6:
+                        exit_client(&global_data, fd);
+
+                  }
                }
             }
          }

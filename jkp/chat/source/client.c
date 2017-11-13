@@ -33,17 +33,27 @@ int exit_client(Client_info *ct)
 //history 요청시 server에 요청을 send.
 void history_request(Client_info *ct)
 {
-
-}
-// 수락거절 회신시 데이터 받고 거절시 안내 메시지 출력
-char acp_recv(Client_info *ct, char *acp)
-{
-
+   
 }
 // 초대 요청 수신시 수락/거절을 선택하여 서버로 send
-char inv_recv(Client_info *ct, char *request)
+void inv_recv(Client_info *ct)
 {
-
+   char buf[10] = {0};
+   char msg[11] = {0};
+   fgets(buf, sizeof(buf), stdin);
+   if (strncmp(buf, "y", 1) == 0 
+      || strncmp(buf, "Y", 1) == 0)
+   {
+      sprintf(msg, "%d|%s", 4, "수락");
+      write(3, msg, sizeof(msg));
+   }  
+   else if (strncmp(buf, "n", 1) == 0 
+      || strncmp(buf, "N", 1) == 0)
+   {
+      sprintf(msg, "%d|%s", 4, "거절");
+      write(3, msg, sizeof(msg));
+   }
+   
 }
 
 int main(void)
@@ -52,6 +62,7 @@ int main(void)
    char buf[BUFSIZ];
    int fd;
    int recv_flag;
+   int chat_flag = 0;
    ct.client_fd = socket(AF_INET, SOCK_STREAM, 0);
    ct.client_address.sin_family = AF_INET;
    ct.client_address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -66,7 +77,24 @@ int main(void)
    {
       printf("ERROR : %d,%s\n",errno, strerror(errno));
       return 1;
-   }      
+   }
+   
+   read(3, buf, sizeof(buf));
+   sscanf(buf, "%d|%s", &recv_flag, buf);
+   if (strcmp(buf, "Nolist")==0)
+      printf("%s\n", buf);
+   else
+   {
+      printf("--------- 접속자 목록 -----------\n");
+      printf("%s\n", buf);
+      while (strcmp(buf, "end"))
+      {  
+         read(3, buf, sizeof(buf));
+         sscanf(buf, "%d|%s", &recv_flag, buf);
+         printf("%s\n", buf);
+      }
+   }
+      
    create_name(&ct); 
    while(1)
    {
@@ -88,21 +116,24 @@ int main(void)
          {
             if (fd == 0)
             {
-               printf("썼넹\n");
                read(fd, buf, sizeof(buf));
+               
+               printf("썼넹\n");
 
             }
             else 
             {
-               printf("읽엇넹\n");
                read(fd, buf, sizeof(buf)); 
-               sscanf(buf, "%d|%[^/n]", &recv_flag, buf);
+               sscanf(buf, "%d|%s", &recv_flag, buf);
+               printf("읽엇넹\n");
+               printf("recv_flag = %d\n",recv_flag);
+               printf("buf = %s\n", buf);
                switch(recv_flag)
                {
                   case 0:
                      break;
                   case 1:
-                     check = strcmp("Duplicate ID", buf);
+                     check = strcmp("DuplicateID", buf);
                      if (check == 0)
                      {
                         printf("중복된 아이디 입니다.\n");
@@ -112,19 +143,22 @@ int main(void)
                         printf("ID add success\n");
                      break;
                   case 2:
-                     check = strncmp("No list", buf, 10);
+                     check = strcmp("Nolist", buf);
                      if (check == 0)
                         printf("접속자가 없습니다.\n");
                      else
                         printf("접속자 : %s\n", buf);   
                      break;
                   case 3:
+                     printf("%s\n",buf);
+                     inv_recv(&ct);
                      break;
                   case 4:
+                     printf("상대방이 거절 하였습니다\n");
                      break;
                   case 5:
-                     break;
-                  case 6:
+                     //history_request(&ct);
+                     printf("%s\n",buf);
                      break;
                }
             }
