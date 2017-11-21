@@ -55,7 +55,6 @@ void send_list(jkp_global *g_data, int request_fd)
 {
    Node *eye;
    char buf[10]={0};
-
    eye = g_data->c_list.head->next;
 
    if (eye == g_data->c_list.tail)
@@ -66,10 +65,13 @@ void send_list(jkp_global *g_data, int request_fd)
    }
    while (eye != g_data->c_list.tail)
    {
+      printf("@@@@@@@@@@\n");
       sprintf(buf, "%d|%s", 2, ((Client_data *)eye->pData)->ci.client_id);
       write(request_fd, buf, 10);    
+      printf("what   %s",buf);
       eye = eye->next;
-      printf("@@@@@@@@@@\n");
+      usleep(10000);
+
    }
    sprintf(buf, "%d|%s", 2, "end");
    write(request_fd, buf, 10);

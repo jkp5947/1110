@@ -21,8 +21,26 @@ void choice_menu(Client_info *ct, int num)
 
 }
 //접속자 목록을 받아 내용을 리턴.
-char recv_list(Client_info *ct)
+void recv_list(Client_info *ct, char buf[])
 {
+   int recv_flag;
+
+   read(3, buf, sizeof(buf));
+   sscanf(buf, "%d|%s", &recv_flag, buf);
+   printf("??%s",buf);
+   if (strcmp(buf, "Nolist")==0)
+      printf("%s\n", buf);
+   else
+   {
+      printf("--------- 접속자 목록 -----------\n");
+      printf("%s\n", buf);
+      while (strcmp(buf, "end"))
+      {  
+         read(3, buf, sizeof(buf));
+         sscanf(buf, "%d|%s", &recv_flag, buf);
+         printf("%s\n", buf);
+      }
+   }
 
 }
 //나가기 입력시 종료시키는 클라이언트의 fd 를 리턴하여 서버에 알림.
@@ -63,7 +81,7 @@ int main(void)
    int fd;
    int recv_flag;
    int chat_flag = 0;
-   ct.client_fd = socket(AF_INET, SOCK_STREAM, 0);
+   ct.client_fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
    ct.client_address.sin_family = AF_INET;
    ct.client_address.sin_addr.s_addr = htonl(INADDR_ANY);
    ct.client_address.sin_port = htons(5947);
@@ -79,22 +97,7 @@ int main(void)
       return 1;
    }
    
-   read(3, buf, sizeof(buf));
-   sscanf(buf, "%d|%s", &recv_flag, buf);
-   if (strcmp(buf, "Nolist")==0)
-      printf("%s\n", buf);
-   else
-   {
-      printf("--------- 접속자 목록 -----------\n");
-      printf("%s\n", buf);
-      while (strcmp(buf, "end"))
-      {  
-         read(3, buf, sizeof(buf));
-         sscanf(buf, "%d|%s", &recv_flag, buf);
-         printf("%s\n", buf);
-      }
-   }
-      
+   recv_list(&ct, buf);  
    create_name(&ct); 
    while(1)
    {
