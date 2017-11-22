@@ -3,31 +3,66 @@
 
 void send_msg(jkp_global *g_data, int fd, char *buf)
 {
-   int ofs, i;
+   int ofs0, ofs1, i;
    int recv_fd;
-   int id_index, h_index;
+   int id_index;
+   int index;
    char id[10];
+   char his[BUFSIZ];
    char msg[BUFSIZ];
-   Node *eye;
-   ofs = OFFSET(Room, att_fd[1]);
-   recv_fd = linkedlist_search(&(g_data->r_list), &fd, ofs, 4, 1);
+   Node *r_eye;
+   Node *c_eye;
+   r_eye = g_data->r_list.head->next;
+   c_eye = g_data->c_list.head->next;
+
+   ofs0 = OFFSET(Room, att_fd[0]);
+   ofs1 = OFFSET(Room, att_fd[1]);
+
    id_index = linkedlist_search(&(g_data->c_list), &fd, 0, 4, 0);
-   eye = g_data->c_list.head->next;
    for (i = 1; i < id_index; i++)
-      eye = eye->next;
-   strcpy(id, ((Client_data *)eye->pData)->ci.client_id);
-   sprintf(msg, "[%s]%s", id, buf);
+      c_eye = c_eye->next;
+   strcpy(id, ((Client_data *)c_eye->pData)->ci.client_id);
+   sprintf(his, "[%s]%s", id, buf);
 
-   h_index = linkedlist_search(&(g_data->r_list), &fd, ofs, 4, 0);
-   eye = g_data->r_list.head->next;
-   for(i = 1; i < h_index; i++)
-      eye = eye->next;
-   linkedlist_add(&(((Room *)eye->pData)->h_list), msg, 1);
+   if ((index = linkedlist_search(&(g_data->r_list), &fd, ofs0, 4, 0)) != -1)
+   {
+      for (i = 1; i < index; i++)
+         r_eye = r_eye->next;
+      recv_fd = ((Room *)r_eye->pData)->att_fd[1];
+      
+   }
+   else
+   {
+      recv_fd = linkedlist_search(&(g_data->r_list), &fd, ofs1, 4, 1);
+      index = linkedlist_search(&(g_data->r_list), &fd, ofs1, 4, 0);
+      for(i = 1; i < index; i++)
+         r_eye = r_eye->next;
+   }
+   linkedlist_add(&(((Room *)r_eye->pData)->h_list), his, 1);
 
-   sprintf(msg, "%d[%s]%s", 0, id, buf);
-   write(recv_fd, msg, sizeof(msg));
+   sprintf(msg, "%d|%s", 0, his);
+   write(recv_fd, msg, sizeof(his));
+   return;
 
-   return ;
+//   ofs = OFFSET(Room, att_fd[1]);
+//   recv_fd = linkedlist_search(&(g_data->r_list), &fd, ofs, 4, 1);
+//   id_index = linkedlist_search(&(g_data->c_list), &fd, 0, 4, 0);
+//   eye = g_data->c_list.head->next;
+//   for (i = 1; i < id_index; i++)
+//      eye = eye->next;
+//   strcpy(id, ((Client_data *)eye->pData)->ci.client_id);
+//   sprintf(msg, "[%s]%s", id, buf);
+//
+//   h_index = linkedlist_search(&(g_data->r_list), &fd, ofs, 4, 0);
+//   eye = g_data->r_list.head->next;
+//   for(i = 1; i < h_index; i++)
+//      eye = eye->next;
+//   linkedlist_add(&(((Room *)eye->pData)->h_list), msg, 1);
+//
+//   sprintf(msg, "%d|[%s]%s", 0, id, buf);
+//   write(recv_fd, msg, sizeof(msg));
+//
+//   return ;
 }
 
 int recv_id(jkp_global *g_data, char *id, int fd)
@@ -54,28 +89,27 @@ int recv_id(jkp_global *g_data, char *id, int fd)
 void send_list(jkp_global *g_data, int request_fd)
 {
    Node *eye;
-   char buf[10]={0};
+   char buf[12];
    eye = g_data->c_list.head->next;
 
    if (eye == g_data->c_list.tail)
    {
       sprintf(buf, "%d|%s", 2, "Nolist");
       write(request_fd, buf, sizeof(buf));
-      printf("!!!!!!!!!\n!");
    }
-   while (eye != g_data->c_list.tail)
+   else
    {
-      printf("@@@@@@@@@@\n");
-      sprintf(buf, "%d|%s", 2, ((Client_data *)eye->pData)->ci.client_id);
-      write(request_fd, buf, 10);    
-      printf("what   %s",buf);
-      eye = eye->next;
-      usleep(10000);
+      while (eye != g_data->c_list.tail)
+      {
+         sprintf(buf, "%d|%s", 2, ((Client_data *)eye->pData)->ci.client_id);
+         write(request_fd, buf, sizeof(buf));    
+         eye = eye->next;
+         usleep(5000);
 
+      }
+      sprintf(buf, "%d|%s", 2, "end");
+      write(request_fd, buf, sizeof(buf));
    }
-   sprintf(buf, "%d|%s", 2, "end");
-   write(request_fd, buf, 10);
-   printf("%s\n",buf);
    return ;
 }
 
@@ -94,19 +128,21 @@ void send_inv(jkp_global *g_data, int inv_fd, int request_fd)
    Node *eye;
    char id[10]={0};
    char buf[BUFSIZ]={0};
+   char temp[BUFSIZ];
    eye = g_data->c_list.head->next;
 
    while (eye != g_data->c_list.tail)
    {
       if (memcmp((char *)(eye->pData), &request_fd, 4) == 0)
       {
-         memcpy(id, &(((Client_data *)eye->pData)->ci.client_fd), 10); 
+         memcpy(id, &(((Client_data *)eye->pData)->ci.client_id), 10); 
          break;
       }
       eye = eye->next;
    }
-   sprintf(buf, "[%s]님이 초대하셨습니다. 수락하시겠습니까? (Y/N)",id);
-   write(inv_fd, buf, sizeof(buf));
+   sprintf(buf, "[%s]님이초대하셨습니다.수락하시겠습니까?(Y/N)",id);
+   sprintf(temp, "%d|%s", 3, buf);
+   write(inv_fd, temp, sizeof(buf));
 }
 
 void call_history(jkp_global *g_data, int request_fd)
@@ -134,15 +170,17 @@ void call_history(jkp_global *g_data, int request_fd)
    find = ((Room *)eye->pData)->h_list.head->next;
    if (find == ((Room *)eye->pData)->h_list.tail)
    {
-      sprintf(err, "%d%s", 5, "no msg");
+      sprintf(err, "%d|%s", 5, "no msg");
       write(request_fd, err, 10);
    } 
    else
    {
       while(find != ((Room *)eye->pData)->h_list.tail)
       {
-         sprintf(message, "%d%s", 5, ((History *)find->pData)->msg);
+         sprintf(message, "%d|%s", 5, ((History *)find->pData)->msg);
+         write(request_fd, message, sizeof(message));
          find = find->next;
+         usleep(50000);
       }
    }   
 }
@@ -220,6 +258,7 @@ int main(void)
          {
             if (fd == server_sockfd)
             {
+               c_data.ci.chat_flag = 0;
                c_data.ci.client_len = sizeof(c_data.ci.client_address);
                c_data.ci.client_fd = accept(server_sockfd, (struct sockaddr *)&(c_data.ci.client_address), &(c_data.ci.client_len));
                FD_SET(c_data.ci.client_fd, &readfds);
@@ -246,8 +285,8 @@ int main(void)
                else
                {
                   read(fd, buf, sizeof(buf));
-                  printf("buf = %s\n",buf);
                   sscanf(buf, "%d|%[^\n]", &recv_flag, buf);
+                  printf("buf - %s\n",buf);
                   switch (recv_flag)
                   {
                      case 0:
@@ -265,6 +304,7 @@ int main(void)
                         {
                            sprintf(buf, "%d|%s", 1, "success");
                            write(fd, buf, sizeof(buf));
+                           send_list(&global_data, c_data.ci.client_fd);
                         }
                         break;
                      case 2: 
@@ -272,10 +312,10 @@ int main(void)
                         break;
                      case 3: 
                         r_data.att_fd[1] = linkedlist_search(&(global_data.c_list), 
-                              buf, 0, 4, 1);
+                              buf, 4, 8, 1);
                         if (r_data.att_fd[1] == -1)
                         {
-                           sprintf(buf, "%d%s", 3, "No user");
+                           sprintf(buf, "%d|%s", 3, "No user");
                            write(fd, buf, sizeof(buf));
                         }
                         else
@@ -286,19 +326,23 @@ int main(void)
                         }
                         break;
                      case 4:
-                        reply_flag = strncmp(buf, "수락", sizeof("수락"));
+                        reply_flag = strncmp(buf, "수락", 4);
                         if (reply_flag == 0) //수락시
                         {
                            ofs = OFFSET(Room, att_fd[1]);
                            index = linkedlist_search(&(global_data.r_list), &fd, ofs, 4, 0);
                            create_room(&global_data, index);
-                           printf("[%d], [%d]의 채팅이 시작되었습니다.\n", 
-                                 linkedlist_search(&(global_data.r_list), &fd, ofs, 4, 1), fd);
+                           inv_fd = linkedlist_search(&(global_data.r_list), &fd, ofs, 4, 1);
+                           printf("[%d], [%d]의 채팅이 시작되었습니다.\n", inv_fd, fd);
+                           sprintf(buf, "%d|%s", 4, "채팅이시작되었습니다.");
+                           write(inv_fd, buf, sizeof(buf));
+                           write(fd, buf, sizeof(buf));
+                           
                         }
                         else 
                         {
                            inv_fd = linkedlist_search(&(global_data.r_list), &fd, 4, 4, 1);
-                           sprintf(buf, "%d%s", 4, "거절하였습니다");
+                           sprintf(buf, "%d|%s", 4, "거절하였습니다");
                            write(inv_fd, buf, sizeof(buf));
                            linkedlist_delete(&(global_data.r_list), &inv_fd, 0, 4);
                         }

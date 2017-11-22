@@ -6,7 +6,7 @@ Client_info ct; //클라이언트 정보(fd, 대화명)
 void create_name(Client_info *ct);
 
 //user_list와 메뉴를 화면에 디스플레이
-void display(Client_info *ct, char *user_list[]);
+void display(Client_info *ct);
 
 //메뉴를 선택시 그에 맞는 역할을 수행
 void choice_menu(Client_info *ct, int num);

@@ -15,4 +15,5 @@ typedef struct _info
    char client_id[10];
    socklen_t client_len;
    struct sockaddr_in client_address;
+   int chat_flag;
 }Client_info; //클라이언트 정보를 담는 구조체
