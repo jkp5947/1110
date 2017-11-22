@@ -1,0 +1,8 @@
+source update test
+--이 줄 이하는 자동으로 제거됩니다--
+
+M    chat/source/chat_client.h
+M    chat/source/chat_common.h
+M    chat/source/client.c
+M    chat/source/linked_list.c
+M    chat/source/server.c
