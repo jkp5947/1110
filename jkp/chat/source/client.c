@@ -25,9 +25,10 @@ void choice_menu(Client_info *ct, int num)
 
 }
 //접속자 목록을 받아 내용을 리턴.
-void recv_list(Client_info *ct, char *buf)
+void recv_list(Client_info *ct)
 {
    int recv_flag;
+   char buf[BUFSIZ];
 
    read(3, buf, sizeof(buf));
    sscanf(buf, "%d|%s", &recv_flag, buf);
@@ -85,6 +86,12 @@ void inv_recv(Client_info *ct)
       inv_recv(ct);
    }
    return ;
+}
+void list_request(Client_info *ct)
+{
+   char buf[BUFSIZ];
+   sprintf(buf, "%d|%s", 2, "list");
+   write(3, buf, sizeof(buf));
 }
 
 int main(void)
@@ -160,6 +167,8 @@ int main(void)
                {
                   if (strncmp(buf, "1.초대하기",10) == 0)
                   {
+                     list_request(&ct);
+                     recv_list(&ct);
                      puts("초대할 아이디를 입력해 주세요.");
                      scanf("%s",buf);
                      sprintf(temp, "%d|%s", 3, buf);    
@@ -216,6 +225,7 @@ int main(void)
                         printf("ID add success\n");
                      break;
                   case 2:
+                     recv_list(&ct);
                      break;
                   case 3:
                      printf("%s\n",buf);

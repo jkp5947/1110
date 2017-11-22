@@ -12,7 +12,7 @@ void display(Client_info *ct);
 void choice_menu(Client_info *ct, int num);
 
 //접속자 목록을 받아 내용을 리턴.
-void recv_list(Client_info *ct, char *buf);
+void recv_list(Client_info *ct);
 
 //나가기 입력시 종료시키는 클라이언트의 fd 를 리턴하여 서버에 알림.
 int exit_client(Client_info *ct);

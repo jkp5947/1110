@@ -304,7 +304,6 @@ int main(void)
                         {
                            sprintf(buf, "%d|%s", 1, "success");
                            write(fd, buf, sizeof(buf));
-                           send_list(&global_data, c_data.ci.client_fd);
                         }
                         break;
                      case 2: 
