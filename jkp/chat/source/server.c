@@ -1,22 +1,22 @@
 #include "chat_server.h"
 
 
-void send_msg(jkp_global *g_data, int fd, char *buf)
+void msg_send(jkp_global *g_data, int fd, char *buf)
 {
-   int ofs0, ofs1, i;
+   int ofs_0, ofs_1, i;
    int recv_fd;
    int id_index;
    int index;
    char id[10];
-   char his[BUFSIZ];
-   char msg[BUFSIZ];
+   char his[1024];
+   char msg[1024];
    Node *r_eye;
    Node *c_eye;
    r_eye = g_data->r_list.head->next;
    c_eye = g_data->c_list.head->next;
 
-   ofs0 = OFFSET(Room, att_fd[0]);
-   ofs1 = OFFSET(Room, att_fd[1]);
+   ofs_0 = OFFSET(Room, att_fd[0]);
+   ofs_1 = OFFSET(Room, att_fd[1]);
 
    id_index = linkedlist_search(&(g_data->c_list), &fd, 0, 4, 0);
    for (i = 1; i < id_index; i++)
@@ -24,7 +24,7 @@ void send_msg(jkp_global *g_data, int fd, char *buf)
    strcpy(id, ((Client_data *)c_eye->pData)->ci.client_id);
    sprintf(his, "[%s]%s", id, buf);
 
-   if ((index = linkedlist_search(&(g_data->r_list), &fd, ofs0, 4, 0)) != -1)
+   if ((index = linkedlist_search(&(g_data->r_list), &fd, ofs_0, 4, 0)) != -1)
    {
       for (i = 1; i < index; i++)
          r_eye = r_eye->next;
@@ -33,8 +33,8 @@ void send_msg(jkp_global *g_data, int fd, char *buf)
    }
    else
    {
-      recv_fd = linkedlist_search(&(g_data->r_list), &fd, ofs1, 4, 1);
-      index = linkedlist_search(&(g_data->r_list), &fd, ofs1, 4, 0);
+      recv_fd = linkedlist_search(&(g_data->r_list), &fd, ofs_1, 4, 1);
+      index = linkedlist_search(&(g_data->r_list), &fd, ofs_1, 4, 0);
       for(i = 1; i < index; i++)
          r_eye = r_eye->next;
    }
@@ -42,30 +42,11 @@ void send_msg(jkp_global *g_data, int fd, char *buf)
 
    sprintf(msg, "%d|%s", 0, his);
    write(recv_fd, msg, sizeof(his));
-   return;
 
-//   ofs = OFFSET(Room, att_fd[1]);
-//   recv_fd = linkedlist_search(&(g_data->r_list), &fd, ofs, 4, 1);
-//   id_index = linkedlist_search(&(g_data->c_list), &fd, 0, 4, 0);
-//   eye = g_data->c_list.head->next;
-//   for (i = 1; i < id_index; i++)
-//      eye = eye->next;
-//   strcpy(id, ((Client_data *)eye->pData)->ci.client_id);
-//   sprintf(msg, "[%s]%s", id, buf);
-//
-//   h_index = linkedlist_search(&(g_data->r_list), &fd, ofs, 4, 0);
-//   eye = g_data->r_list.head->next;
-//   for(i = 1; i < h_index; i++)
-//      eye = eye->next;
-//   linkedlist_add(&(((Room *)eye->pData)->h_list), msg, 1);
-//
-//   sprintf(msg, "%d|[%s]%s", 0, id, buf);
-//   write(recv_fd, msg, sizeof(msg));
-//
-//   return ;
+   return;
 }
 
-int recv_id(jkp_global *g_data, char *id, int fd)
+int id_recv(jkp_global *g_data, char *id, int fd)
 {
    int index, find, i;
    long ofs;
@@ -86,10 +67,10 @@ int recv_id(jkp_global *g_data, char *id, int fd)
       return -1;
 }
 
-void send_list(jkp_global *g_data, int request_fd)
+void list_send(jkp_global *g_data, int request_fd)
 {
    Node *eye;
-   char buf[12];
+   char buf[10];
    eye = g_data->c_list.head->next;
 
    if (eye == g_data->c_list.tail)
@@ -113,7 +94,7 @@ void send_list(jkp_global *g_data, int request_fd)
    return ;
 }
 
-void create_room(jkp_global *g_data, int index)
+void room_create(jkp_global *g_data, int index)
 {
    Node *eye;
    int i;
@@ -123,12 +104,12 @@ void create_room(jkp_global *g_data, int index)
    linkedlist_init(&(((Room *)eye->pData)->h_list));
 }
 
-void send_inv(jkp_global *g_data, int inv_fd, int request_fd)
+void invite_send(jkp_global *g_data, int inv_fd, int request_fd)
 {
    Node *eye;
    char id[10]={0};
-   char buf[BUFSIZ]={0};
-   char temp[BUFSIZ];
+   char buf[1024]={0};
+   char temp[1024];
    eye = g_data->c_list.head->next;
 
    while (eye != g_data->c_list.tail)
@@ -145,7 +126,7 @@ void send_inv(jkp_global *g_data, int inv_fd, int request_fd)
    write(inv_fd, temp, sizeof(buf));
 }
 
-void call_history(jkp_global *g_data, int request_fd)
+void history_call(jkp_global *g_data, int request_fd)
 {
    int index;
    int i;
@@ -205,7 +186,107 @@ void exit_client(jkp_global *g_data, int exit_client_fd)
    else
       printf("삭제 실패\n");
 }
+void invite_recv(jkp_global *g_data, int fd, int reply_flag)
+{
+   int r_ofs;
+   int index;
+   int inv_fd;
+   char buf[1024];
+   r_ofs = OFFSET(Room, att_fd[1]);
+   if (reply_flag == 0) //수락시
+   {
+      index = linkedlist_search(&(g_data->r_list), &fd, r_ofs, 4, 0);
+      room_create(g_data, index);
+      inv_fd = linkedlist_search(&(g_data->r_list), &fd, r_ofs, 4, 1);
 
+      chat_flag_change(g_data, fd, 1);
+      chat_flag_change(g_data, inv_fd, 1);
+
+      printf("[%d], [%d]의 채팅이 시작되었습니다.\n", inv_fd, fd);
+      sprintf(buf, "%d|%s", 4, "채팅이시작되었습니다.");
+      write(inv_fd, buf, sizeof(buf));
+      write(fd, buf, sizeof(buf));
+
+   }
+   else 
+   {
+      inv_fd = linkedlist_search(&(g_data->r_list), &fd, r_ofs, 4, 1);
+      sprintf(buf, "%d|%s", 4, "거절하였습니다");
+      write(inv_fd, buf, sizeof(buf));
+      linkedlist_delete(&(g_data->r_list), &inv_fd, 0, 4);
+   }
+
+}
+
+void chat_quit(jkp_global *g_data, int fd)
+{
+   int index;
+   int opponent_fd;
+   int i;
+   int chk = 0;
+   char buf[1024];
+   Node *eye;
+   eye = g_data->r_list.head->next;
+
+   if ((index = linkedlist_search(&(g_data->r_list), &fd, 0, 4, 0)) == -1)
+   {
+      index = linkedlist_search(&(g_data->r_list), &fd, 4, 4 ,0);
+      chk = 1;
+   }
+   for (i = 1; i < index; i++)
+      eye = eye->next;
+   linkedlist_enumerate(&((Room *)eye->pData)->h_list,1);
+   linkedlist_destroy(&((Room *)eye->pData)->h_list);
+   linkedlist_enumerate(&((Room *)eye->pData)->h_list,1);
+
+   if (chk == 0)
+   {
+      opponent_fd = ((Room *)eye->pData)->att_fd[1];
+      linkedlist_delete(&(g_data->r_list), &fd, 0, 4);
+   }
+   else
+   {
+      opponent_fd = ((Room *)eye->pData)->att_fd[0];
+      linkedlist_delete(&(g_data->r_list), &fd, 4, 4);
+   }
+   
+   chat_flag_change(g_data, fd, 0);
+   chat_flag_change(g_data, opponent_fd, 0);
+   printf("chk = %d\n",chk);
+   sprintf(buf, "%d|%s", 6, "대화종료");
+   write(opponent_fd, buf, sizeof(buf));
+   write(fd, buf, sizeof(buf));
+   printf("[%d], [%d]의 채팅이 종료되었습니다.\n", fd, opponent_fd);
+
+   return;
+}
+void chat_flag_change(jkp_global *g_data, int fd, int change_value)
+{
+   int index;
+   int i;
+   Node *eye;
+   eye = g_data->c_list.head->next;
+   
+   index = linkedlist_search(&(g_data->c_list), &fd, 0, 4, 0);
+   for (i = 1; i < index; i++)
+      eye = eye->next;
+   ((Client_data *)eye->pData)->ci.chat_flag = change_value;
+   printf("flag = %d\n",  ((Client_data *)eye->pData)->ci.chat_flag);
+
+   return;
+}
+int chat_flag_search(jkp_global *g_data, int fd)
+{
+   int index;
+   int i;
+   Node *eye;
+   eye = g_data->c_list.head->next;
+   
+   index = linkedlist_search(&(g_data->c_list), &fd, 0, 4, 0);
+   for (i = 1; i < index; i++)
+      eye = eye->next;
+   return ((Client_data *)eye->pData)->ci.chat_flag;
+}
 int main(void)
 {
    int server_sockfd;
@@ -233,16 +314,15 @@ int main(void)
 
    while (1)
    {
-      char buf[BUFSIZ];
+      char buf[1024];
       int fd;
       int recv_flag;
-      int inv_fd;
       int reply_flag; 
-      int index, ofs;
       int nread;
       testfds = readfds;
 
       printf("server waiting\n");
+      linkedlist_enumerate(&(global_data.c_list),0);
 
       result = select(nfds, &testfds, (fd_set *)0, 
             (fd_set *)0, (struct timeval *)0);
@@ -263,7 +343,7 @@ int main(void)
                c_data.ci.client_fd = accept(server_sockfd, (struct sockaddr *)&(c_data.ci.client_address), &(c_data.ci.client_len));
                FD_SET(c_data.ci.client_fd, &readfds);
                nfds++;
-               send_list(&global_data, c_data.ci.client_fd);
+               list_send(&global_data, c_data.ci.client_fd);
                linkedlist_add(&(global_data.c_list), &c_data, 0);
             }
             else
@@ -277,9 +357,14 @@ int main(void)
                      printf("error : fd is already deleted!\n");
                   else
                   {
+                     
+                     if (chat_flag_search(&global_data, fd) == 1)
+                        chat_quit(&global_data, fd);
+
                      close(fd);
                      FD_CLR(fd, &readfds);
-                     printf("%d가 퇴장하였습니다.\n", fd);
+
+                     printf("[%d]가 퇴장하였습니다.\n", fd);
                   }
                }
                else
@@ -290,11 +375,11 @@ int main(void)
                   switch (recv_flag)
                   {
                      case 0:
-                        send_msg(&global_data, fd, buf);
+                        msg_send(&global_data, fd, buf);
                         break; 
                      case 1:
                         printf("id = %s\n",buf);
-                        reply_flag = recv_id(&global_data, buf, fd);
+                        reply_flag = id_recv(&global_data, buf, fd);
                         if (reply_flag == -1)
                         {
                            sprintf(buf, "%d|%s", 1, "DuplicateID");
@@ -307,9 +392,11 @@ int main(void)
                         }
                         break;
                      case 2: 
-                        send_list(&global_data, fd);
+                        list_send(&global_data, fd);
                         break;
                      case 3: 
+                        linkedlist_enumerate(&(global_data.c_list),0);
+                        linkedlist_enumerate(&(global_data.r_list),2);
                         r_data.att_fd[1] = linkedlist_search(&(global_data.c_list), 
                               buf, 4, 8, 1);
                         if (r_data.att_fd[1] == -1)
@@ -319,39 +406,30 @@ int main(void)
                         }
                         else
                         {
-                           r_data.att_fd[0] = fd;
-                           linkedlist_add(&(global_data.r_list), &r_data, 2);
-                           send_inv(&global_data, r_data.att_fd[1], fd);       
+                          printf("chat)flag = %d\n", chat_flag_search(&global_data, r_data.att_fd[1])); 
+                           if (chat_flag_search(&global_data, r_data.att_fd[1]) == 0)
+                           {
+                              r_data.att_fd[0] = fd;
+                              linkedlist_add(&(global_data.r_list), &r_data, 2);
+                              invite_send(&global_data, r_data.att_fd[1], fd);       
+                           }
+                           else
+                           {
+                              sprintf(buf, "%d|%s", 3, "No! User is already chatting");
+                              write(fd, buf, sizeof(buf));
+                           }
                         }
                         break;
                      case 4:
                         reply_flag = strncmp(buf, "수락", 4);
-                        if (reply_flag == 0) //수락시
-                        {
-                           ofs = OFFSET(Room, att_fd[1]);
-                           index = linkedlist_search(&(global_data.r_list), &fd, ofs, 4, 0);
-                           create_room(&global_data, index);
-                           inv_fd = linkedlist_search(&(global_data.r_list), &fd, ofs, 4, 1);
-                           printf("[%d], [%d]의 채팅이 시작되었습니다.\n", inv_fd, fd);
-                           sprintf(buf, "%d|%s", 4, "채팅이시작되었습니다.");
-                           write(inv_fd, buf, sizeof(buf));
-                           write(fd, buf, sizeof(buf));
-                           
-                        }
-                        else 
-                        {
-                           inv_fd = linkedlist_search(&(global_data.r_list), &fd, 4, 4, 1);
-                           sprintf(buf, "%d|%s", 4, "거절하였습니다");
-                           write(inv_fd, buf, sizeof(buf));
-                           linkedlist_delete(&(global_data.r_list), &inv_fd, 0, 4);
-                        }
+                        invite_recv(&global_data, fd, reply_flag);
                         break;
                      case 5:
-                        call_history(&global_data, fd);
+                        history_call(&global_data, fd);
                         break;
                      case 6:
-                        exit_client(&global_data, fd);
-
+                        chat_quit(&global_data, fd);
+                        break;
                   }
                }
             }

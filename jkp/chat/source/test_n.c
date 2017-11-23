@@ -11,7 +11,11 @@ int main() {
    char buf[10];
    char temp[10];
    int num;
-   
+   char arr[BUFSIZ];
+   char arr1[1024];
+
+   printf("size %ld\n",sizeof(arr));   
+   printf("size1024 %ld\n",sizeof(arr1));   
    if ((num=func())==1)
    {
       printf("ih\n");
