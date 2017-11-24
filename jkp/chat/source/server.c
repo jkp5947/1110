@@ -107,8 +107,8 @@ void room_create(jkp_global *g_data, int index)
 void invite_send(jkp_global *g_data, int inv_fd, int request_fd)
 {
    Node *eye;
-   char id[10]={0};
-   char buf[1024]={0};
+   char id[10];
+   char buf[1024];
    char temp[1024];
    eye = g_data->c_list.head->next;
 
@@ -123,7 +123,7 @@ void invite_send(jkp_global *g_data, int inv_fd, int request_fd)
    }
    sprintf(buf, "[%s]님이초대하셨습니다.수락하시겠습니까?(Y/N)",id);
    sprintf(temp, "%d|%s", 3, buf);
-   write(inv_fd, temp, sizeof(buf));
+   write(inv_fd, temp, sizeof(temp));
 }
 
 void history_call(jkp_global *g_data, int request_fd)
@@ -161,7 +161,7 @@ void history_call(jkp_global *g_data, int request_fd)
          sprintf(message, "%d|%s", 5, ((History *)find->pData)->msg);
          write(request_fd, message, sizeof(message));
          find = find->next;
-         usleep(50000);
+         usleep(1000);
       }
    }   
 }
@@ -235,9 +235,7 @@ void chat_quit(jkp_global *g_data, int fd)
    }
    for (i = 1; i < index; i++)
       eye = eye->next;
-   linkedlist_enumerate(&((Room *)eye->pData)->h_list,1);
    linkedlist_destroy(&((Room *)eye->pData)->h_list);
-   linkedlist_enumerate(&((Room *)eye->pData)->h_list,1);
 
    if (chk == 0)
    {
@@ -319,6 +317,7 @@ int main(void)
       int recv_flag;
       int reply_flag; 
       int nread;
+      int _chat_flag;
       testfds = readfds;
 
       printf("server waiting\n");
@@ -352,13 +351,12 @@ int main(void)
 
                if (nread == 0)
                {
-                  
+                  _chat_flag = chat_flag_search(&global_data, fd); 
                   if (linkedlist_delete(&(global_data.c_list), &fd, 0, 4) == -1)
                      printf("error : fd is already deleted!\n");
                   else
                   {
-                     
-                     if (chat_flag_search(&global_data, fd) == 1)
+                     if (_chat_flag == 1)
                         chat_quit(&global_data, fd);
 
                      close(fd);
@@ -395,10 +393,13 @@ int main(void)
                         list_send(&global_data, fd);
                         break;
                      case 3: 
-                        linkedlist_enumerate(&(global_data.c_list),0);
-                        linkedlist_enumerate(&(global_data.r_list),2);
+                        r_data.att_fd[0] = fd;
                         r_data.att_fd[1] = linkedlist_search(&(global_data.c_list), 
                               buf, 4, 8, 1);
+                        _chat_flag = chat_flag_search(&global_data, r_data.att_fd[1]);
+                        printf("att_fd[0] = %d\n",r_data.att_fd[0]);
+                        printf("att_fd[1] = %d\n",r_data.att_fd[1]);
+                        linkedlist_enumerate(&(global_data.r_list), 2);
                         if (r_data.att_fd[1] == -1)
                         {
                            sprintf(buf, "%d|%s", 3, "No user");
@@ -406,18 +407,19 @@ int main(void)
                         }
                         else
                         {
-                          printf("chat)flag = %d\n", chat_flag_search(&global_data, r_data.att_fd[1])); 
-                           if (chat_flag_search(&global_data, r_data.att_fd[1]) == 0)
+                           if (_chat_flag == 0)
                            {
                               r_data.att_fd[0] = fd;
                               linkedlist_add(&(global_data.r_list), &r_data, 2);
                               invite_send(&global_data, r_data.att_fd[1], fd);       
                            }
-                           else
+                           else 
                            {
                               sprintf(buf, "%d|%s", 3, "No! User is already chatting");
                               write(fd, buf, sizeof(buf));
                            }
+                        printf("att_fd[0] = %d\n",r_data.att_fd[0]);
+                        printf("att_fd[1] = %d\n",r_data.att_fd[1]);
                         }
                         break;
                      case 4:

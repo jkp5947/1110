@@ -42,6 +42,7 @@ void menu_choice(Client_info *ct, char *buf, fd_set *readfds)
    }
    else if (strncmp(buf, "2.종료하기",10) == 0)
    {
+      FD_CLR(ct->client_fd, readfds);
       close(ct->client_fd);
    }
 }
