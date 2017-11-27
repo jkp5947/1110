@@ -38,10 +38,6 @@ int id_recv(jkp_global *g_data, char *id, int fd);
 //linked list에서 대화명들을 요청한 클라이언트 fd를 통하여 전송.
 void list_send(jkp_global *g_data, int request_fd);
 
-//클라이언트로 부터 초대 요청시 일치하는 대화명이 있는지 확인후
-//일치하는 접속자가 있으면 그 클라이언트의 fd를 리턴한다.
-//int inv_request(jkp_global *g_data, char *id);
-
 //찾은 접속자에게 초대를 보냄
 void invite_send(jkp_global *g_data, int inv_fd, int request_fd);
 

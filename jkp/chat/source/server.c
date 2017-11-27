@@ -1,16 +1,15 @@
 #include "chat_server.h"
 
-
+// 메시지를 수신하였을 때 상대 Client에게 send하고 history에 저장.
 void msg_send(jkp_global *g_data, int fd, char *buf)
 {
-   long ofs_0, ofs_1;
-   int i;
-   int recv_fd;
-   int id_index;
-   int index;
-   char id[10];
-   char his[1024];
-   char msg[1024];
+   long ofs_0, ofs_1;   // room의 att_fd offset 1,2
+   int i;               // for문 사용하기 위한 변수
+   int recv_fd;         // 메세지를 받을 fd
+   int id_index;        // id를 찾기 위한 index 변수
+   int room_index;      // room을 찾기 위한 index 변수
+   char history[1024];  // history에 저장하기 위한 공간
+   char message[1024];  // message를 보내기 위한 공간
    Node *r_eye;
    Node *c_eye;
    r_eye = g_data->r_list.head->next;
@@ -22,35 +21,37 @@ void msg_send(jkp_global *g_data, int fd, char *buf)
    id_index = linkedlist_search(&(g_data->c_list), &fd, 0, 4, 0);
    for (i = 1; i < id_index; i++)
       c_eye = c_eye->next;
-   strcpy(id, ((Client_data *)c_eye->pData)->ci.client_id);
-   sprintf(his, "[%s]%s", id, buf);
+   sprintf(history, "[%s]%s", ((Client_data *)c_eye->pData)->ci.client_id, buf);
 
-   if ((index = linkedlist_search(&(g_data->r_list), &fd, ofs_0, 4, 0)) != -1)
+   if ((room_index = linkedlist_search(&(g_data->r_list), &fd, ofs_0, 4, 0)) != -1)
    {
-      for (i = 1; i < index; i++)
+      for (i = 1; i < room_index; i++)
          r_eye = r_eye->next;
       recv_fd = ((Room *)r_eye->pData)->att_fd[1];
-      
    }
    else
    {
       recv_fd = linkedlist_search(&(g_data->r_list), &fd, ofs_1, 4, 1);
-      index = linkedlist_search(&(g_data->r_list), &fd, ofs_1, 4, 0);
-      for(i = 1; i < index; i++)
+      room_index = linkedlist_search(&(g_data->r_list), &fd, ofs_1, 4, 0);
+      for(i = 1; i < room_index; i++)
          r_eye = r_eye->next;
    }
-   linkedlist_add(&(((Room *)r_eye->pData)->h_list), his, 1);
+   linkedlist_add(&(((Room *)r_eye->pData)->h_list), history, 1);
 
-   sprintf(msg, "%d|%s", 0, his);
-   write(recv_fd, msg, sizeof(his));
+   sprintf(message, "%d|%s", 0, history);
+   write(recv_fd, message, sizeof(message));
 
    return;
 }
 
+//recv한 클라이언트 대화명을 리스트에 추가하고
+//Server화면에 입장 메시지를 출력
 int id_recv(jkp_global *g_data, char *id, int fd)
 {
-   int index, find, i;
-   long ofs;
+   int index;  // id를 찾기위한 index
+   int find;   // 찾은 id를 통해 반환된 fd를 저장하기 위한 변수
+   int i;      // for문
+   long ofs;   // client_id offset
    Node *eye;
    eye = g_data->c_list.head->next;
 
@@ -68,10 +69,12 @@ int id_recv(jkp_global *g_data, char *id, int fd)
       return -1;
 }
 
+//클라이언트에서 접속자 목록 요청시 클라이언트 데이터를 가지고있는
+//linked list에서 대화명들을 요청한 클라이언트 fd를 통하여 전송.
 void list_send(jkp_global *g_data, int request_fd)
 {
-   Node *eye;
    char buf[1024];
+   Node *eye;
    eye = g_data->c_list.head->next;
 
    if (eye == g_data->c_list.tail)
@@ -86,8 +89,7 @@ void list_send(jkp_global *g_data, int request_fd)
          sprintf(buf, "%d|%s", 2, ((Client_data *)eye->pData)->ci.client_id);
          write(request_fd, buf, sizeof(buf));    
          eye = eye->next;
-         usleep(5000);
-
+         usleep(1000); 
       }
       sprintf(buf, "%d|%s", 2, "end");
       write(request_fd, buf, sizeof(buf));
@@ -95,6 +97,7 @@ void list_send(jkp_global *g_data, int request_fd)
    return ;
 }
 
+//찾은 접속자에게 초대를 보냄
 void invite_send(jkp_global *g_data, int inv_fd, int request_fd)
 {
    Node *eye;
@@ -112,20 +115,22 @@ void invite_send(jkp_global *g_data, int inv_fd, int request_fd)
       }
       eye = eye->next;
    }
-   sprintf(buf, "[%s]님이초대하셨습니다.수락하시겠습니까?(Y/N)",id);
-   sprintf(temp, "%d|%s", 3, buf);
-   write(inv_fd, temp, sizeof(temp));
+   sprintf(temp, "[%s]님이초대하셨습니다.수락하시겠습니까?(Y/N)",id);
+   sprintf(buf, "%d|%s", 3, temp);
+   write(inv_fd, buf, sizeof(buf));
+   
+   return ;
 }
 
+//요청한 fd를 통해 대화내용을 불러들이고 대화내용을 send
 void history_call(jkp_global *g_data, int request_fd)
 {
-   int index;
+   int index;           //요청한 fd를 찾기위한 index
    int i;
-   char err[10];
-   char message[1024];
+   char buf[1024];      //history를 보내거나 history가 없음을 보낼 buf 
    Node *eye, *find;
    
-
+   // request_fd의 room index를 찾는 과정.
    index = linkedlist_search(&(g_data->r_list), &request_fd, 0, 4, 0);
    if (index == -1)
    {
@@ -136,50 +141,58 @@ void history_call(jkp_global *g_data, int request_fd)
          return ;
       }
    }      
+   // 찾은 room_index의 history를 확인.
    eye = g_data->r_list.head->next;
    for (i = 1; i < index; i++)
       eye = eye->next;
    find = ((Room *)eye->pData)->h_list.head->next;
    if (find == ((Room *)eye->pData)->h_list.tail)
    {
-      sprintf(err, "%d|%s", 5, "no msg");
-      write(request_fd, err, 10);
+      sprintf(buf, "%d|%s", 5, "No history");
+      write(request_fd, buf, sizeof(buf));
    } 
    else
    {
       while(find != ((Room *)eye->pData)->h_list.tail)
       {
-         sprintf(message, "%d|%s", 5, ((History *)find->pData)->msg);
-         write(request_fd, message, sizeof(message));
+         sprintf(buf, "%d|%s", 5, ((History *)find->pData)->msg);
+         write(request_fd, buf, sizeof(buf));
          find = find->next;
          usleep(1000);
       }
    }   
+   return ;
 }
 
+//초대 수락시 방생성(h_list init)
 void room_create(jkp_global *g_data, int index)
 {
    Node *eye;
    int i;
+
    eye = g_data->r_list.head->next;
    for (i = 1; i < index; i++)
       eye = eye->next;
    linkedlist_init(&(((Room *)eye->pData)->h_list));
 }
 
-
-void invite_recv(jkp_global *g_data, int fd, int reply_flag)
+//수락/거절 회신시 flag를 통하여 수락상황과 거절상황 처리
+// 수락시 -> chat_flag를 변경하고 채팅시작을 알림
+// 거절시 -> 초대요청한 Client에게 거절알림.
+void invite_recv(jkp_global *g_data, int fd, int flag_reply)
 {
-   long r_ofs;
+   long room_ofs; //요청당한 fd의 offset
    int index;
-   int inv_fd;
+   int inv_fd;    //초대 요청한 fd
    char buf[1024];
-   r_ofs = OFFSET(Room, att_fd[1]);
-   if (reply_flag == 0) //수락시
+
+   room_ofs = OFFSET(Room, att_fd[1]); 
+
+   if (flag_reply == 0) //수락시 초대 요청한 fd를 찾고 방생성, chat_flag를 변경후 알린다.
    {
-      index = linkedlist_search(&(g_data->r_list), &fd, r_ofs, 4, 0);
+      index = linkedlist_search(&(g_data->r_list), &fd, room_ofs, 4, 0);
       room_create(g_data, index);
-      inv_fd = linkedlist_search(&(g_data->r_list), &fd, r_ofs, 4, 1);
+      inv_fd = linkedlist_search(&(g_data->r_list), &fd, room_ofs, 4, 1);
 
       chat_flag_change(g_data, fd, 1);
       chat_flag_change(g_data, inv_fd, 1);
@@ -190,16 +203,17 @@ void invite_recv(jkp_global *g_data, int fd, int reply_flag)
       write(fd, buf, sizeof(buf));
 
    }
-   else 
+   else  //거절시 
    {
-      inv_fd = linkedlist_search(&(g_data->r_list), &fd, r_ofs, 4, 1);
+      inv_fd = linkedlist_search(&(g_data->r_list), &fd, room_ofs, 4, 1);
       sprintf(buf, "%d|%s", 4, "거절하였습니다");
       write(inv_fd, buf, sizeof(buf));
       linkedlist_delete(&(g_data->r_list), &inv_fd, 0, 4);
    }
-
+   return ;
 }
 
+// //chat_flag의 값을 Change_value로 변경하는 함수.
 void chat_flag_change(jkp_global *g_data, int fd, int change_value)
 {
    int index;
@@ -215,6 +229,7 @@ void chat_flag_change(jkp_global *g_data, int fd, int change_value)
    return;
 }
 
+//chat_flag의 값이 무엇인지 찾는 함수 (return chat_flag)
 int chat_flag_search(jkp_global *g_data, int fd)
 {
    int index;
@@ -228,12 +243,14 @@ int chat_flag_search(jkp_global *g_data, int fd)
    return ((Client_data *)eye->pData)->ci.chat_flag;
 }
 
+//채팅방 종료시 채팅방의 모든 history data를 destroy, room data를 삭제 
+//채팅 종료를 알림.
 void chat_quit(jkp_global *g_data, int fd)
 {
-   int index;
-   int opponent_fd;
+   int index;        // 종료한 fd가 속해 있는 room의 index
+   int opponent_fd;  // 대화 상대의 fd
    int i;
-   int chk = 0;
+   int chk = 0;      // fd가 att_fd 0번째인지 1번째인지 저장.
    char buf[1024];
    Node *eye;
    eye = g_data->r_list.head->next;
@@ -296,12 +313,12 @@ int main(void)
    while (1)
    {
       char buf[1024];
-      int fd;
-      int recv_flag;    //수신 flag
-      int reply_flag;   //채팅초대 수락/거절 회신 flag 
-      int nread;        //읽은 갯수
-      int chk;
-      int _chat_flag;
+      int fd;           // 현재 연결된 fd
+      int flag_recv;    // 수신 flag
+      int flag_reply;   // 채팅초대 수락/거절 회신 flag 
+      int nread;        // 읽은 갯수(Client의 종료를 알기 위해 사용)
+      int check_id;     // id 중복 check
+      int flag_chat;    // chat_flag를 확인하는 flag
       testfds = readfds;
 
       printf("server waiting\n");
@@ -323,7 +340,9 @@ int main(void)
             {
                c_data.ci.chat_flag = 0;
                c_data.ci.client_len = sizeof(c_data.ci.client_address);
-               c_data.ci.client_fd = accept(server_sockfd, (struct sockaddr *)&(c_data.ci.client_address), &(c_data.ci.client_len));
+               c_data.ci.client_fd = accept(server_sockfd, 
+                     (struct sockaddr *)&(c_data.ci.client_address), 
+                        &(c_data.ci.client_len));
                FD_SET(c_data.ci.client_fd, &readfds);
                nfds++;
                list_send(&global_data, c_data.ci.client_fd);
@@ -335,12 +354,12 @@ int main(void)
 
                if (nread == 0)
                {
-                  _chat_flag = chat_flag_search(&global_data, fd);
+                  flag_chat = chat_flag_search(&global_data, fd);
                   if (linkedlist_delete(&(global_data.c_list), &fd, 0, 4) == -1)
                      printf("error : fd is already deleted!\n");
                   else
                   {
-                     if (_chat_flag == 1)
+                     if (flag_chat == 1)
                         chat_quit(&global_data, fd);
 
                      close(fd);
@@ -352,16 +371,16 @@ int main(void)
                else
                {
                   read(fd, buf, sizeof(buf));
-                  sscanf(buf, "%d|%[^\n]", &recv_flag, buf);
+                  sscanf(buf, "%d|%[^\n]", &flag_recv, buf);
                   printf("buf - %s\n",buf);
-                  switch (recv_flag)
+                  switch (flag_recv)
                   {
                      case 0:  //채팅 메세지 일때
                         msg_send(&global_data, fd, buf);
                         break; 
                      case 1:  //대화명 recv하였을 때
-                        chk = id_recv(&global_data, buf, fd);
-                        if (chk == -1)
+                        check_id = id_recv(&global_data, buf, fd);
+                        if (check_id == -1)
                         {
                            sprintf(buf, "%d|%s", 1, "DuplicateID");
                            write(fd, buf, sizeof(buf));
@@ -375,12 +394,12 @@ int main(void)
                      case 2:  //Client에서 접속자 목록 요청시
                         list_send(&global_data, fd);
                         break;
+                     //요청한 fd를 att_fd[0]에 요청당한 fd를 att_fd[1]에 저장 후 수락대기.
                      case 3:  //Client가 초대 요청시
-                        printf("invite!!\n");
-                        r_data.att_fd[0] = fd;
+                        r_data.att_fd[0] = fd;     
                         r_data.att_fd[1] = linkedlist_search(&(global_data.c_list), 
                               buf, 4, 10, 1);
-                        _chat_flag = chat_flag_search(&global_data, r_data.att_fd[1]);
+                        flag_chat = chat_flag_search(&global_data, r_data.att_fd[1]);
                         linkedlist_enumerate(&(global_data.r_list), 2);
                         if (r_data.att_fd[1] == -1)
                         {
@@ -389,7 +408,7 @@ int main(void)
                         }
                         else
                         {
-                           if (_chat_flag == 0)
+                           if (flag_chat == 0)
                            {
                               linkedlist_add(&(global_data.r_list), &r_data, 2);
                               invite_send(&global_data, r_data.att_fd[1], fd);       
@@ -402,8 +421,8 @@ int main(void)
                         }
                         break;
                      case 4:  //수락/거절 회신받았을 때
-                        reply_flag = strncmp(buf, "수락", 4);
-                        invite_recv(&global_data, fd, reply_flag);
+                        flag_reply = strncmp(buf, "수락", 4);
+                        invite_recv(&global_data, fd, flag_reply);
                         break;
                      case 5:  //Client에서 히스토리 요청시
                         history_call(&global_data, fd);
