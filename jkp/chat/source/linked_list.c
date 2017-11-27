@@ -53,7 +53,7 @@ void linkedlist_add(List *list, void *struct_data, int choice_flag)
       front = front->next;
    }
    front->next = nw;
-   printf("ADD SUCCESS\n");
+   //printf("ADD SUCCESS\n");
 }
 
 //linked list 에서 원하는 데이터 찾기
@@ -73,8 +73,8 @@ int linkedlist_search(List *list, void *data, long ofs, int len, int return_flag
    while (eye != list->tail)
    {   
       if (memcmp((char *)(eye->pData) + ofs, data, len) == 0)
-      {   
-         printf("FOUND\n");
+      {
+         //printf("FOUND\n");   
          if (return_flag == 0)
             return index;
          else 
@@ -83,7 +83,7 @@ int linkedlist_search(List *list, void *data, long ofs, int len, int return_flag
       eye = eye -> next;
       index++;
    }   
-   printf("NOT FOUND\n");
+   //printf("NOT FOUND\n");
    return -1;
 }
 
@@ -113,32 +113,6 @@ int linkedlist_delete(List *list, void *find, long ofs, int len)
       chk = chk->next;
    }
    return -1;
-}
-
-
-
-//linked list 삭제 
-void linkedlist_destroy(List *list)
-{
-   if(list->head == 0)
-   {
-      printf("error : list is empty\n");
-      return ;
-   }
-   Node *kill, *help;
-   kill = list->head->next;
-   while (kill != list->tail)
-   {
-      help = kill->next;
-      free(kill->pData);
-      free(kill);
-      kill = help;
-   }
-   list->head = 0;
-   list->tail = 0;
-   free(list->head);
-   free(kill);
-   
 }
 
 //linked list 열거
@@ -174,9 +148,33 @@ void linkedlist_enumerate(List *list,int struct_flag)
    {
       while (eye != list->tail)
       {
-         printf("att_fd_1 : %d ",((Room *)eye->pData)->att_fd[0]);
-         printf("att_fd_2 : %d\n",((Room *)eye->pData)->att_fd[1]);
+         printf("att_fd[1] : %d ",((Room *)eye->pData)->att_fd[0]);
+         printf("att_fd[2] : %d\n",((Room *)eye->pData)->att_fd[1]);
          eye = eye->next;
       }
    }
+}
+
+//linked list 삭제 
+void linkedlist_destroy(List *list)
+{
+   if(list->head == 0)
+   {
+      printf("error : list is empty\n");
+      return ;
+   }
+   Node *kill, *help;
+   kill = list->head->next;
+   while (kill != list->tail)
+   {
+      help = kill->next;
+      free(kill->pData);
+      free(kill);
+      kill = help;
+   }
+   list->head = 0;
+   list->tail = 0;
+   free(list->head);
+   free(kill);
+   
 }

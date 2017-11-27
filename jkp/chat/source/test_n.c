@@ -8,24 +8,16 @@ int func()
 
 int main() {
 
-   char buf[10];
-   char temp[10];
+   char buf[1024];
+   char temp[1024];
    int num;
-   char arr[BUFSIZ];
-   char arr1[1024];
 
-   printf("size %ld\n",sizeof(arr));   
-   printf("size1024 %ld\n",sizeof(arr1));   
-   if ((num=func())==1)
-   {
-      printf("ih\n");
-   }
    scanf("%s",buf);
    sprintf(temp, "%d|%s", 2, buf);
    printf("%s\n", temp);
-   sscanf(temp, "%d|%s", &num, buf);
+   sscanf(temp, "%d|%s", &num, temp);
    printf("num = %d\n",num);
-   printf("buf = %s\n",buf);
+   printf("buf = %s\n",temp);
    return 0;
 }
 
