@@ -13,6 +13,7 @@ int main(void)
    
    linkedlist_init(&(global_data.c_list));
    linkedlist_init(&(global_data.r_list));
+
    server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
    server_address.sin_family = AF_INET;
    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -37,7 +38,7 @@ int main(void)
       testfds = readfds;
 
       printf("server waiting\n");
-      linkedlist_enumerate(&(global_data.c_list),0);
+      linkedlist_enumerate(&(global_data.c_list), 0);
 
       result = select(nfds, &testfds, (fd_set *)0, 
             (fd_set *)0, (struct timeval *)0);
@@ -114,6 +115,8 @@ int main(void)
                         r_data.att_fd[0] = fd;     
                         r_data.att_fd[1] = linkedlist_search(&(global_data.c_list), 
                               buf, 4, 10, 1);
+                        printf("attfd 0 - %d\n",r_data.att_fd[0]);
+                        printf("attfd 1 - %d\n",r_data.att_fd[1]);
                         flag_chat = chat_flag_search(&global_data, r_data.att_fd[1]);
                         linkedlist_enumerate(&(global_data.r_list), 2);
                         if (r_data.att_fd[1] == -1)

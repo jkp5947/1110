@@ -33,7 +33,7 @@ void msg_send(jkp_global *g_data, int fd, char *buf)
    {
       recv_fd = linkedlist_search(&(g_data->r_list), &fd, ofs_1, 4, 1);
       room_index = linkedlist_search(&(g_data->r_list), &fd, ofs_1, 4, 0);
-      for(i = 1; i < room_index; i++)
+      for (i = 1; i < room_index; i++)
          r_eye = r_eye->next;
    }
    linkedlist_add(&(((Room *)r_eye->pData)->h_list), history, 1);
@@ -60,7 +60,7 @@ int id_recv(jkp_global *g_data, char *id, int fd)
    if (find == -1)
    {
       index = linkedlist_search(&(g_data->c_list), &fd, 0, 4, 0);
-      for( i = 1; i < index; i++)
+      for (i = 1; i < index; i++)
          eye = eye->next;
       memcpy(((Client_data *)eye->pData)->ci.client_id, id, 10);
       return 0;
@@ -153,7 +153,7 @@ void history_call(jkp_global *g_data, int request_fd)
    } 
    else
    {
-      while(find != ((Room *)eye->pData)->h_list.tail)
+      while (find != ((Room *)eye->pData)->h_list.tail)
       {
          sprintf(buf, "%d|%s", 5, ((History *)find->pData)->msg);
          write(request_fd, buf, sizeof(buf));

@@ -3,7 +3,7 @@
 //아이디 생성.
 void id_create(Client_info *c_data)
 {
-   char buf[1024];
+   char buf[1024]={0};
    puts("사용하고자 하는 ID를 입력하세요.");
    scanf("%s",c_data->client_id);
    sprintf(buf, "%d|%s", 1, c_data->client_id);
@@ -42,7 +42,7 @@ int menu_choice(Client_info *ct, char *msg)
       puts("초대할 아이디를 입력해 주세요.");
       scanf("%s",temp);
       sprintf(buf, "%d|%s", 3, temp);    
-      write(ct->client_fd, buf, sizeof(buf));
+      write(3, buf, sizeof(buf));
       return 0;
    }
    else if (strncmp(msg, "2.종료하기",10) == 0)
