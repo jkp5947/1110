@@ -131,7 +131,7 @@ void linkedlist_enumerate(List *list,int struct_flag)
       while(eye != list->tail)
       {
          printf("fd  : %-5d ",((Client_data *)eye->pData)->ci.client_fd);
-         printf("id  : %-10s",((Client_data *)eye->pData)->ci.client_id);
+         printf("id  : %-11s",((Client_data *)eye->pData)->ci.client_id);
          printf("flag  : %-5d\n",((Client_data *)eye->pData)->ci.chat_flag);
          eye = eye->next;
       }
